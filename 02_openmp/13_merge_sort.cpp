@@ -37,7 +37,7 @@ void merge_sort(std::vector<int>& vec, int begin, int end) {
 }
 
 int main() {
-  int n = 20;
+  int n = 500000;
   std::vector<int> vec(n);
   for (int i=0; i<n; i++) {
     vec[i] = rand() % (10 * n);
@@ -45,14 +45,17 @@ int main() {
   }
   printf("\n");
 
+  double start_time = omp_get_wtime();
   #pragma omp parallel
   {
     #pragma omp single
     merge_sort(vec, 0, n-1);
   }
-  
+  double end_time = omp_get_wtime();
+
   for (int i=0; i<n; i++) {
     printf("%d ",vec[i]);
   }
   printf("\n");
+  printf("Running Time : %f seconds\n", end_time - start_time);
 }
