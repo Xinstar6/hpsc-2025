@@ -22,18 +22,21 @@ int main (int argc, char** argv) {
   H5Sget_simple_extent_dims(globalspace, N, NULL);
   hsize_t NX = N[0], NY = N[1];
   hsize_t Nlocal[2] = {NX/dim[0], NY/dim[1]};
-  hsize_t offset[2] = {mpirank / dim[0], mpirank % dim[0]};
-  for(int i=0; i<2; i++) offset[i] *= Nlocal[i];
-  hsize_t count[2] = {1,1};
-  hsize_t stride[2] = {1,1};
-  hid_t localspace = H5Screate_simple(2, Nlocal, NULL);
-  H5Sselect_hyperslab(globalspace, H5S_SELECT_SET, offset, stride, count, Nlocal);
+ 
+
+  hsize_t block [2] = { Nlocal[0]/dim[0], Nlocal[1]/dim[1]};
+  hsize_t count [2] = { dim[0], dim[1]};
+  hsize_t stride[2] = { block[0]*dim[0], block[1]*dim[1]};
+  hsize_t offset[2] = {(mpirank/dim[0]) * block[0],(mpirank%dim[0]) * block[1]};
+  hid_t localspace = H5Screate_simple(2, Nlocal, NULL); 
+  H5Sselect_hyperslab(globalspace, H5S_SELECT_SET, offset, stride, count, block);
+
   H5Pclose(plist);
   vector<int> buffer(Nlocal[0]*Nlocal[1]);
   plist = H5Pcreate(H5P_DATASET_XFER);
   H5Pset_dxpl_mpio(plist, H5FD_MPIO_COLLECTIVE);
   auto tic = chrono::steady_clock::now();
-  H5Dread(dataset, H5T_NATIVE_INT, localspace, globalspace, plist, &buffer[0]);
+  H5Dread(dataset, H5T_NATIVE_INT, localspace, globalspace, plist, buffer.data());
   auto toc = chrono::steady_clock::now();
   H5Dclose(dataset);
   H5Sclose(localspace);
