@@ -4,7 +4,7 @@
 #include <vector>
 
 using namespace std;
-typedef vector<vector<float> > matrix;
+typedef vector<vector<float>> matrix;
 
 int main() {
   int nx = 41;
@@ -38,7 +38,7 @@ int main() {
   ofstream pfile("p.dat");
 
   for (int n=0; n<nt; n++) {
-
+    #pragma omp parallel for collapse(2)
     for (int j=1; j<ny-1; j++) {
       for (int i=1; i<nx-1; i++) {
         // Compute b[j][i]
@@ -57,9 +57,12 @@ int main() {
 
 
     for (int it=0; it<nit; it++) {
+      #pragma omp parallel for collapse(2)
       for (int j=0; j<ny; j++)
         for (int i=0; i<nx; i++)
 	        pn[j][i] = p[j][i];
+
+      #pragma omp parallel for collapse(2)
       for (int j=1; j<ny-1; j++) {
         for (int i=1; i<nx-1; i++) {
 	      // Compute p[j][i]
@@ -69,9 +72,9 @@ int main() {
           float denom_inv = 1.0f / (2.0f * (dx * dx + dy * dy));
 
           p[j][i] = (weighted_x + weighted_y - rhs_term) * denom_inv;
-
 	      }
       }
+
       for (int j=0; j<ny; j++) {
         // Compute p[j][0] and p[j][nx-1]
         p[j][nx-1] = p[j][nx-2];
@@ -92,6 +95,7 @@ int main() {
       }
     }
 
+    #pragma omp parallel for collapse(2)
     for (int j=1; j<ny-1; j++) {
       for (int i=1; i<nx-1; i++) {
 	    // Compute u[j][i] and v[j][i]
